@@ -1,38 +1,26 @@
-import json
-
+import cart
 import products
-from cart import dao
-from products import Product
+from cart import get_cart
+import os
 
 
-class Cart:
-    def __init__(self, id: int, username: str, contents: list[Product], cost: float):
-        self.id = id
-        self.username = username
-        self.contents = contents
-        self.cost = cost
+def checkout(username):
+    cart = get_cart(username)
+    total = 0
+    for item in cart:
+        total += item.cost
 
-    @staticmethod
-    def load(data: dict) -> 'Cart':
-        return Cart(data["id"], data["username"], data["contents"], data["cost"])
-
-
-def get_cart(username: str) -> list[Product]:
-    cart_details = dao.get_cart(username)
-    if (cart_details is None):
-        return []
-
-    items = [item for cart_detail in cart_details for item in json.loads(cart_detail["contents"])]
-    return [products.get_product(item) for item in items]
+    # Here the exit can happen when a illegal memory is accessed
+    # or when a error is not handled properly
+    # os._exit(1)
+    return total
 
 
-def add_to_cart(username: str, product_id: int):
-    dao.add_to_cart(username, product_id)
-
-
-def remove_from_cart(username: str, product_id: int):
-    dao.remove_from_cart(username, product_id)
-
-
-def delete_cart(username: str):
-    dao.delete_cart(username)
+def complete_checkout(username):
+    cartv = cart.get_cart(username)
+    items = cartv
+    for item in items:
+        assert item.qty >= 1
+    for item in items:
+        cart.delete_cart(username)
+        products.update_qty(item.id, item.qty - 1)
